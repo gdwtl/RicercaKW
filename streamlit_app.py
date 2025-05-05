@@ -1,68 +1,95 @@
 import streamlit as st
 import pandas as pd
+import time
 from collections import Counter
 import itertools
-from io import BytesIO
 
-# Titolo dell'app
-st.title("Analisi di Parole, Coppie e Triple")
+# Configura layout e font
+st.set_page_config(page_title="Word Analysis", layout="wide")
 
-# Upload del file
+# Inietta Google Font Poppins + supporto per tema chiaro/scuro
+st.markdown("""
+    <style>
+    @import url('https://fonts.googleapis.com/css2?family=Poppins&display=swap');
+
+    html, body, [class*="css"]  {
+        font-family: 'Poppins', sans-serif;
+        transition: all 0.3s ease;
+    }
+
+    .st-dark {
+        background-color: #1e1e1e !important;
+    }
+
+    .metric-box {
+        padding: 2rem;
+        border-radius: 15px;
+        background-color: white;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        margin-bottom: 2rem;
+    }
+
+    [data-theme="dark"] .metric-box {
+        background-color: #2d2d2d;
+        color: white;
+    }
+    </style>
+""", unsafe_allow_html=True)
+
+# Selettore per il tema
+theme = st.radio("Tema", ["Chiaro", "Scuro"], horizontal=True)
+
+# Forza la classe CSS in base alla scelta (usando hack JS/CSS)
+st.markdown(f"""
+    <script>
+    const root = window.parent.document.documentElement;
+    root.setAttribute('data-theme', '{'dark' if theme == "Scuro" else 'light'}');
+    </script>
+""", unsafe_allow_html=True)
+
+# File uploader
+st.title("Analisi Parole")
 uploaded_file = st.file_uploader("Carica un file Excel", type=["xlsx"])
 
 if uploaded_file:
-    # Leggi il file Excel
+    start_time = time.time()
+
     df = pd.read_excel(uploaded_file)
 
-    # Specifica le colonne da analizzare
+    # Colonne da analizzare
     columns_to_analyze = ['Title', 'Description', 'B01', 'B02', 'B03', 'B04', 'B05', 'B06', 'B07']
 
-    # Estrai e concatena i testi
-    text_data = []
-    for _, row in df.iterrows():
-        text_data.append(" ".join(row[columns_to_analyze].dropna().astype(str)))
-    text_data = " ".join(text_data)
+    missing = [col for col in columns_to_analyze if col not in df.columns]
+    if missing:
+        st.error(f"Colonne mancanti: {', '.join(missing)}")
+        st.stop()
+
+    # Estrai e concatena testo
+    text_data = [
+        " ".join(row[columns_to_analyze].dropna().astype(str))
+        for _, row in df.iterrows()
+    ]
+    all_text = " ".join(text_data)
 
     # Tokenizza
-    words = text_data.split()
+    words = all_text.split()
+    word_count = len(words)
+    elapsed_time = round(time.time() - start_time, 2)
 
-    # Conta parole, coppie e triple
-    word_counts = Counter(words)
-    word_pairs = Counter(zip(words, itertools.islice(words, 1, None)))
-    word_triplets = Counter(zip(words, itertools.islice(words, 1, None), itertools.islice(words, 2, None)))
+    # Mostra risultati
+    col1, col2 = st.columns(2)
+    with col1:
+        st.markdown(f"""
+        <div class="metric-box">
+            <h2 style='margin: 0;'>🔤 Parole Analizzate</h2>
+            <h1 style='margin: 0; font-size: 3rem;'>{word_count}</h1>
+        </div>
+        """, unsafe_allow_html=True)
 
-    # Preparazione risultati
-    max_len = max(len(word_counts), len(word_pairs), len(word_triplets))
-    word_items = word_counts.most_common(max_len)
-    pair_items = word_pairs.most_common(max_len)
-    triplet_items = word_triplets.most_common(max_len)
-
-    word_items += [(None, None)] * (max_len - len(word_items))
-    pair_items += [(None, None)] * (max_len - len(pair_items))
-    triplet_items += [(None, None)] * (max_len - len(triplet_items))
-
-    results_df = pd.DataFrame({
-        'Words': [word for word, _ in word_items],
-        'Word Count': [count for _, count in word_items],
-        'Word Pairs': [' '.join(pair) if pair and all(pair) else None for pair, _ in pair_items],
-        'Pair Count': [count for _, count in pair_items],
-        'Triplets': [' '.join(triplet) if triplet and all(triplet) else None for triplet, _ in triplet_items],
-        'Triplet Count': [count for _, count in triplet_items]
-    })
-
-    # Mostra il DataFrame
-    st.subheader("Risultati dell'Analisi")
-    st.dataframe(results_df)
-
-    # Crea un buffer per il download
-    output = BytesIO()
-    results_df.to_excel(output, index=False)
-    output.seek(0)
-
-    # Bottone per scaricare il file
-    st.download_button(
-        label="📥 Scarica risultati in Excel",
-        data=output,
-        file_name='word_analysis_results.xlsx',
-        mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-    )
+    with col2:
+        st.markdown(f"""
+        <div class="metric-box">
+            <h2 style='margin: 0;'>⏱️ Tempo Impiegato</h2>
+            <h1 style='margin: 0; font-size: 3rem;'>{elapsed_time} sec</h1>
+        </div>
+        """, unsafe_allow_html=True)
