@@ -1,19 +1,25 @@
-# 🎈 Blank app template
+# Word Analysis App (Streamlit)
 
-A simple Streamlit app template for you to modify!
+Questa app esegue un'analisi automatica su parole, coppie e triple contenute in colonne specifiche di un file Excel.
 
-[![Open in Streamlit](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://blank-app-template.streamlit.app/)
+## 🚀 Come usarla su Streamlit Cloud
 
-### How to run it on your own machine
+1. **Clona o carica questo progetto su GitHub**
+2. Vai su [https://streamlit.io/cloud](https://streamlit.io/cloud) e accedi con GitHub
+3. Clicca su **New app**
+4. Seleziona il tuo repository GitHub
+5. Scegli il file `app.py`
+6. Clicca su **Deploy**
 
-1. Install the requirements
+## 📦 Requisiti
 
-   ```
-   $ pip install -r requirements.txt
-   ```
+Installati automaticamente da Streamlit Cloud tramite il file `requirements.txt`.
 
-2. Run the app
+streamlit
+pandas
+openpyxl
 
-   ```
-   $ streamlit run streamlit_app.py
-   ```
+## 📁 File richiesti
+
+- `app.py` – il codice dell'applicazione
+- `requirements.txt` – dipendenze Python
